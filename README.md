@@ -20,15 +20,14 @@ AQI index app is an air quality indexing app for states of india.
 
 ## Language
 
-This project is written in Kotlin language
+This project is written in Kotlin language. Completed in 7 hours
 
 
-## Plugins
+## Library
 
-Dillinger is currently extended with the following plugins.
-Instructions on how to use them in your own application are linked below.
+Used libraries
 
-| Plugin | README | Usage |
+| Library | README | Usage |
 | ------ | ------ | ------ |
 | Room | [https://developer.android.com/training/data-storage/room][PlDb] | Android room database for storing the data! |
 | Navigation | [https://developer.android.com/guide/navigation][PlGh] | Used android jetpack navigation library |
