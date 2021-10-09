@@ -10,8 +10,6 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,7 +19,6 @@ import com.kbj.aqiindex.adapter.AdapterCallback
 import com.kbj.aqiindex.adapter.DashboardAdapter
 import com.kbj.aqiindex.callbacks.ConnectionCallBack
 import com.kbj.aqiindex.databinding.FragmentDashboardBinding
-import com.kbj.aqiindex.models.AQIBean
 import com.kbj.aqiindex.ui.DataViewModel
 import com.kbj.aqiindex.utils.KeyConstants
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,9 +39,6 @@ class DashboardFragment : Fragment(), AdapterCallback, ConnectionCallBack {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding
-
-    private val dataObserver = Observer<List<AQIBean>> {
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
