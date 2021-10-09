@@ -3,16 +3,15 @@ package com.kbj.aqiindex.ui.dashboard
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
-import android.opengl.Visibility
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,8 +25,8 @@ import com.kbj.aqiindex.models.AQIBean
 import com.kbj.aqiindex.ui.DataViewModel
 import com.kbj.aqiindex.utils.KeyConstants
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -38,19 +37,13 @@ class DashboardFragment : Fragment(), AdapterCallback, ConnectionCallBack {
     private var _binding: FragmentDashboardBinding? = null
     private var adapter: DashboardAdapter? = null
     private lateinit var connectivityManager: ConnectivityManager
+    private var scope = CoroutineScope(Job() + Dispatchers.Main)
 
     // This property is only valid between onCreateView and
     // onDestroyView.
-    private val binding get() = _binding!!
+    private val binding get() = _binding
 
     private val dataObserver = Observer<List<AQIBean>> {
-        if (binding.progressBar.visibility == View.VISIBLE) {
-            binding.progressBar.visibility = View.GONE
-        }
-        if (binding.mRecyclerView.visibility != View.VISIBLE) {
-            binding.mRecyclerView.visibility = View.VISIBLE
-        }
-        adapter?.updateList(it)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,47 +57,57 @@ class DashboardFragment : Fragment(), AdapterCallback, ConnectionCallBack {
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
-        return binding.root
+        return binding?.root
     }
 
     override fun onResume() {
         super.onResume()
         connectivityManager.registerDefaultNetworkCallback(netWorkCallback)
-        viewModel.setDataLineage()
-        viewModel.data.observe(viewLifecycleOwner, dataObserver)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.mRecyclerView.layoutManager = LinearLayoutManager(
+        binding?.mRecyclerView?.layoutManager = LinearLayoutManager(
             requireContext(),
             RecyclerView.VERTICAL, false
         )
-        (binding.mRecyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+        (binding?.mRecyclerView?.itemAnimator as SimpleItemAnimator).supportsChangeAnimations =
+            false
         adapter = DashboardAdapter(requireContext(), this)
-        binding.mRecyclerView.adapter = adapter
+        binding?.mRecyclerView?.adapter = adapter
         viewModel.setConnectionCallBack(this)
+    }
+
+    private fun loadData() {
+        if (!scope.isActive) {
+            scope = CoroutineScope(Job() + Dispatchers.Main)
+        }
+        scope.launch {
+            viewModel.getFlow().collect {
+                dataLoadedUi()
+                adapter?.updateList(it)
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        scope.cancel()
         _binding = null
     }
 
     private val netWorkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             requireActivity().runOnUiThread {
-                binding.progressBar.visibility = View.VISIBLE
-                binding.netGroup.visibility = View.GONE
+                makeLoadingUI()
                 viewModel.setWebHook()
+                loadData()
             }
         }
 
         override fun onLost(network: Network) {
             requireActivity().runOnUiThread {
-                binding.mRecyclerView.visibility = View.GONE
-                binding.netGroup.visibility = View.VISIBLE
-                binding.progressBar.visibility = View.GONE
+                makeFailureUI()
             }
         }
     }
@@ -112,7 +115,6 @@ class DashboardFragment : Fragment(), AdapterCallback, ConnectionCallBack {
     override fun onPause() {
         super.onPause()
         connectivityManager.unregisterNetworkCallback(netWorkCallback)
-        viewModel.data.removeObserver(dataObserver)
         viewModel.cancelSocket()
     }
 
@@ -123,10 +125,23 @@ class DashboardFragment : Fragment(), AdapterCallback, ConnectionCallBack {
 
     override fun onConnectionFailure() {
         requireActivity().runOnUiThread {
-            binding.netGroup.visibility = View.VISIBLE
-            binding.progressBar.visibility = View.GONE
-            binding.mRecyclerView.visibility = View.GONE
-            binding.textView8.text = getString(R.string.no_network_connection)
+            makeFailureUI()
         }
+    }
+
+    private fun makeFailureUI() {
+        dataLoadedUi()
+        binding?.textView8?.text = getString(R.string.no_network_connection)
+    }
+
+    private fun dataLoadedUi() {
+        binding?.mRecyclerView?.visibility = View.VISIBLE
+        binding?.progressBar?.visibility = View.GONE
+        binding?.netGroup?.visibility = View.GONE
+    }
+
+    private fun makeLoadingUI() {
+        binding?.progressBar?.visibility = View.VISIBLE
+        binding?.netGroup?.visibility = View.GONE
     }
 }

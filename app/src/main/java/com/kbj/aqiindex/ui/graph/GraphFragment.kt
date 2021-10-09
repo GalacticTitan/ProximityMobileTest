@@ -18,6 +18,8 @@ import com.kbj.aqiindex.utils.KeyConstants
 import com.kbj.aqiindex.utils.UtilFunctions
 import com.kbj.aqiindex.utils.roundTo
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 
 
 /**
@@ -32,6 +34,7 @@ class GraphFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
     private var lineData: LineData? = null
+    private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private val dataObserver = Observer<List<AQIBean>> { list ->
         setLineChartData(list)
     }
@@ -71,23 +74,26 @@ class GraphFragment : Fragment() {
         binding.mLineChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
         binding.mLineChart.description.isEnabled = false
         binding.mLineChart.legend.isEnabled = false
+        scope.launch{
+            viewModel.getFlow(arguments?.getString(KeyConstants.CITY)).collect {
+                setLineChartData(it)
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.setWebHook()
-        viewModel.setDataLineage(arguments?.getString(KeyConstants.CITY))
-        viewModel.data.observe(viewLifecycleOwner, dataObserver)
     }
 
     override fun onPause() {
         super.onPause()
-        viewModel.data.removeObserver(dataObserver)
         viewModel.cancelSocket()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        scope.cancel()
         _binding = null
     }
 }
