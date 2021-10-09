@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">AQI APP</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">AQI Indexes</string>
+    <string name="second_fragment_label">Graph</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+    <string name="seconds">%s second(s) ago</string>
+    <string name="minutes">%s minute(s) ago</string>
+    <string name="hours">%s hour(s) ago</string>
+    <string name="aqi">AQI</string>
+    <string name="time_in_seconds">Time in Seconds</string>
+    <string name="last_updated">Last Updated</string>
+    <string name="something_wr">Something Went Wrong</string>
+    <string name="no_network_connection">No Network Connection</string>
+</resources>
